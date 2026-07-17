@@ -159,7 +159,13 @@ class VhfAmReceiver(gr.top_block, QtWidgets.QWidget):
     def _build_flowgraph(self):
         device_args = str(self._config.get("device_args", "rtl=0"))
 
-        self.src = osmosdr.source(args=f"numchan=1 {device_args}")
+        try:
+            self.src = osmosdr.source(args=f"numchan=1 {device_args}")
+        except RuntimeError as exc:
+            raise RuntimeError(
+                "Failed to open RTL-SDR device. Ensure no other SDR app is using it, "
+                "and blacklist DVB kernel drivers on Raspberry Pi if needed."
+            ) from exc
         self.src.set_sample_rate(self.sample_rate)
         self.src.set_freq_corr(0, 0)
         self.src.set_dc_offset_mode(0, 0)
@@ -169,12 +175,11 @@ class VhfAmReceiver(gr.top_block, QtWidgets.QWidget):
         self.agc = analog.agc2_cc(1e-2, 1e-1, 1.0, 1.0)
         self.agc.set_max_gain(65536)
 
+        # GNU Radio 3.10 selector constructor is (itemsize, input_index, output_index).
         self.agc_selector = blocks.selector(
-            item_size=gr.sizeof_gr_complex,
-            num_inputs=2,
-            num_outputs=1,
-            input_index=1 if self.agc_enabled else 0,
-            output_index=0,
+            gr.sizeof_gr_complex,
+            1 if self.agc_enabled else 0,
+            0,
         )
 
         self.squelch = analog.simple_squelch_cc(self.squelch_db, 0.1)
