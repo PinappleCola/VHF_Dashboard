@@ -1,0 +1,28 @@
+{
+  "device_args": "rtl=0",
+  "sample_rate": 240000,
+  "audio_rate": 48000,
+  "defaults": {
+    "frequency_mhz": 121.5,
+    "squelch_db": -55.0,
+    "agc_enabled": true,
+    "carrier_gain_db": 20.0,
+    "bandwidth_hz": 9000.0
+  },
+  "presets": {
+    "Guard": {
+      "frequency_mhz": 121.5,
+      "squelch_db": -55.0,
+      "agc_enabled": true,
+      "carrier_gain_db": 20.0,
+      "bandwidth_hz": 9000.0
+    },
+    "Local_Tower": {
+      "frequency_mhz": 118.3,
+      "squelch_db": -50.0,
+      "agc_enabled": true,
+      "carrier_gain_db": 18.0,
+      "bandwidth_hz": 8500.0
+    }
+  }
+}
