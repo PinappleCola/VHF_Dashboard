@@ -14,7 +14,6 @@ from pathlib import Path
 
 from gnuradio import analog
 from gnuradio import audio
-from gnuradio import blocks
 from gnuradio import filter
 from gnuradio import gr
 from gnuradio.filter import firdes
@@ -172,16 +171,6 @@ class VhfAmReceiver(gr.top_block, QtWidgets.QWidget):
         self.src.set_iq_balance_mode(0, 0)
         self.src.set_antenna("", 0)
 
-        self.agc = analog.agc2_cc(1e-2, 1e-1, 1.0, 1.0)
-        self.agc.set_max_gain(65536)
-
-        # GNU Radio 3.10 selector constructor is (itemsize, input_index, output_index).
-        self.agc_selector = blocks.selector(
-            gr.sizeof_gr_complex,
-            1 if self.agc_enabled else 0,
-            0,
-        )
-
         self.squelch = analog.simple_squelch_cc(self.squelch_db, 0.1)
 
         self.rf_lpf = filter.fir_filter_ccf(1, self._make_rf_lpf_taps(self.bandwidth_hz))
@@ -195,10 +184,7 @@ class VhfAmReceiver(gr.top_block, QtWidgets.QWidget):
 
         self.audio_sink = audio.sink(int(self.audio_rate), "", True)
 
-        self.connect((self.src, 0), (self.agc, 0))
-        self.connect((self.src, 0), (self.agc_selector, 0))
-        self.connect((self.agc, 0), (self.agc_selector, 1))
-        self.connect((self.agc_selector, 0), (self.squelch, 0))
+        self.connect((self.src, 0), (self.squelch, 0))
         self.connect((self.squelch, 0), (self.rf_lpf, 0))
         self.connect((self.rf_lpf, 0), (self.am_demod, 0))
         self.connect((self.am_demod, 0), (self.audio_sink, 0))
@@ -208,7 +194,6 @@ class VhfAmReceiver(gr.top_block, QtWidgets.QWidget):
         self.src.set_gain_mode(self.agc_enabled, 0)
         self.src.set_gain(self.carrier_gain_db, 0)
         self.squelch.set_threshold(self.squelch_db)
-        self.agc_selector.set_input_index(1 if self.agc_enabled else 0)
 
         if hasattr(self.src, "set_bandwidth"):
             self.src.set_bandwidth(self.bandwidth_hz, 0)
@@ -236,7 +221,6 @@ class VhfAmReceiver(gr.top_block, QtWidgets.QWidget):
     def set_agc_enabled(self, enabled):
         self.agc_enabled = bool(enabled)
         self.src.set_gain_mode(self.agc_enabled, 0)
-        self.agc_selector.set_input_index(1 if self.agc_enabled else 0)
 
     def set_carrier_gain_db(self, value):
         self.carrier_gain_db = float(value)
